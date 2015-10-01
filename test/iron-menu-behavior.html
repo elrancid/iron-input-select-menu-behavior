@@ -21,7 +21,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     <script src="../../web-component-tester/browser.js"></script>
     <script src="../../test-fixture/test-fixture-mocha.js"></script>
-
+    <script src="../../iron-test-helpers/mock-interactions.js"></script>
     <link rel="import" href="../../test-fixture/test-fixture.html">
     <link rel="import" href="test-menu.html">
 
@@ -44,6 +44,19 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           <div>item 1</div>
           <div>item 2</div>
           <div>item 3</div>
+        </test-menu>
+      </template>
+    </test-fixture>
+
+
+   <test-fixture id="nested">
+      <template>
+        <test-menu>
+          <test-menu>
+            <div>item 1</div>
+            <div>item 2</div>
+            <div>item 3</div>
+          </test-menu>
         </test-menu>
       </template>
     </test-fixture>
@@ -97,6 +110,36 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             assert.equal(document.activeElement, menu.items[0], 'document.activeElement is last activated item');
             done();
           // wait for async in _onFocus
+          }, 200);
+        });
+
+        test('keyboard events should not bubble', function(done) {
+          var menu = fixture('nested');
+          var keyCounter = 0;
+
+          menu.addEventListener('keydown', function(event) {
+            if (menu.keyboardEventMatchesKeys(event, 'esc')) {
+              keyCounter++;
+            }
+            if (menu.keyboardEventMatchesKeys(event, 'up')) {
+              keyCounter++;
+            }
+            if (menu.keyboardEventMatchesKeys(event, 'down')) {
+              keyCounter++;
+            }
+          });
+
+          // up
+          MockInteractions.keyDownOn(menu.firstElementChild, 38);
+          // down
+          MockInteractions.keyDownOn(menu.firstElementChild, 40);
+          // esc
+          MockInteractions.keyDownOn(menu.firstElementChild, 27);
+
+          setTimeout(function() {
+            assert.equal(menu.firstElementChild.tagName, 'TEST-MENU');
+            assert.equal(keyCounter, 0);
+            done();
           }, 200);
         });
 
