@@ -1,8 +1,11 @@
 {
-  "name": "iron-menu-behavior",
+  "name": "iron-input-select-menu-behavior",
   "version": "1.0.5",
   "description": "Provides accessible menu behavior",
-  "authors": "The Polymer Authors",
+  "authors": [
+    "The Polymer Authors",
+    "Davide Zeffiro <elrancid@gmail.com>"
+  ],
   "keywords": [
     "web-components",
     "polymer",
@@ -10,16 +13,16 @@
     "menu"
   ],
   "main": [
-    "iron-menu-behavior.html",
-    "iron-menubar-behavior.html"
+    "iron-input-select-menu-behavior.html",
+    "iron-input-select-menubar-behavior.html"
   ],
   "private": true,
   "repository": {
     "type": "git",
-    "url": "git://github.com/PolymerElements/iron-menu-behavior"
+    "url": "git://github.com/elrancid/iron-input-select-menu-behavior"
   },
   "license": "http://polymer.github.io/LICENSE.txt",
-  "homepage": "https://github.com/PolymerElements/iron-menu-behavior",
+  "homepage": "https://github.com/elrancid/iron-input-select-menu-behavior",
   "ignore": [],
   "dependencies": {
     "iron-selector": "PolymerElements/iron-selector#^1.0.0",
