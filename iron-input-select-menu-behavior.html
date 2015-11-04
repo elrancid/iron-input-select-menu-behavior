@@ -27,21 +27,21 @@ WARNING! In development. Not ready.
 <script>
 
   /**
-   * `Polymer.IronMenuBehavior` implements accessible menu behavior.
+   * `Polymer.IronInputSelectMenuBehavior` implements accessible menu behavior.
    *
    * @demo demo/index.html
-   * @polymerBehavior Polymer.IronMenuBehavior
+   * @polymerBehavior Polymer.IronInputSelectMenuBehavior
    */
-  Polymer.IronMenuBehaviorImpl = {
+  Polymer.IronInputSelectMenuBehaviorImpl = {
 
     properties: {
 
       /**
-       * Returns the currently focused item.
+       * Returns the currently actived item.
        * @type {?Object}
        */
-      focusedItem: {
-        observer: '_focusedItemChanged',
+      activedItem: {
+        observer: '_activedItemChanged',
         readOnly: true,
         type: Object
       },
@@ -57,8 +57,8 @@ WARNING! In development. Not ready.
     },
 
     hostAttributes: {
-      'role': 'menu',
-      'tabindex': '0'
+      'role': 'menu'
+//      'tabindex': '0'
     },
 
     observers: [
@@ -66,7 +66,7 @@ WARNING! In development. Not ready.
     ],
 
     listeners: {
-      'focus': '_onFocus',
+//      'focus': '_onFocus',
       'keydown': '_onKeydown',
       'iron-items-changed': '_onIronItemsChanged'
     },
@@ -89,27 +89,34 @@ WARNING! In development. Not ready.
      * @param {string} value the value to select.
      */
     select: function(value) {
+      console.trace('iron-input-select-menu-behavior.select() value:',value);
       if (this._defaultFocusAsync) {
         this.cancelAsync(this._defaultFocusAsync);
         this._defaultFocusAsync = null;
       }
       var item = this._valueToItem(value);
       if (item && item.hasAttribute('disabled')) return;
-      this._setFocusedItem(item);
+      this._setActivedItem(item);
       Polymer.IronMultiSelectableBehaviorImpl.select.apply(this, arguments);
     },
 
     /**
-     * Resets all tabindex attributes to the appropriate value based on the
+     * Resets all actived attributes to the appropriate value based on the
      * current selection state. The appropriate value is `0` (focusable) for
      * the default selected item, and `-1` (not keyboard focusable) for all
      * other items.
      */
     _resetTabindices: function() {
+//      console.trace('iron-input-select-menu-behavior._resetTabindices() selectedItem:',this.selectedItem);
       var selectedItem = this.multi ? (this.selectedItems && this.selectedItems[0]) : this.selectedItem;
+//      console.trace('iron-input-select-menu-behavior._resetTabindices() selectedItem:',this.selectedItem);
+
+      if (!selectedItem) selectedItem = this.activedItem;
 
       this.items.forEach(function(item) {
-        item.setAttribute('tabindex', item === selectedItem ? '0' : '-1');
+//        item.setAttribute('tabindex', item === selectedItem ? '0' : '-1');
+        if (item === selectedItem) item.setAttribute('actived',true);
+        else item.removeAttribute('actived');
       }, this);
     },
 
@@ -120,6 +127,7 @@ WARNING! In development. Not ready.
      * @param {boolean} multi True if the menu should be multi-selectable.
      */
     _updateMultiselectable: function(multi) {
+      console.log('iron-input-select-menu-behavior._updateMultiselectable()');
       if (multi) {
         this.setAttribute('aria-multiselectable', 'true');
       } else {
@@ -133,34 +141,37 @@ WARNING! In development. Not ready.
      *
      * @param {KeyboardEvent} event A KeyboardEvent.
      */
-    _focusWithKeyboardEvent: function(event) {
+    _activateWithKeyboardEvent: function(event) {
+      console.log('iron-input-select-menu-behavior._activateWithKeyboardEvent()');
       for (var i = 0, item; item = this.items[i]; i++) {
         var attr = this.attrForItemTitle || 'textContent';
         var title = item[attr] || item.getAttribute(attr);
         if (title && title.trim().charAt(0).toLowerCase() === String.fromCharCode(event.keyCode).toLowerCase()) {
-          this._setFocusedItem(item);
+          this._setActivedItem(item);
           break;
         }
       }
     },
 
     /**
-     * Focuses the previous item (relative to the currently focused item) in the
+     * Focuses the previous item (relative to the currently actived item) in the
      * menu.
      */
-    _focusPrevious: function() {
+    _activatePrevious: function() {
+//      console.log('iron-input-select-menu-behavior._activatePrevious()');
       var length = this.items.length;
-      var index = (Number(this.indexOf(this.focusedItem)) - 1 + length) % length;
-      this._setFocusedItem(this.items[index]);
+      var index = (Number(this.indexOf(this.activedItem)) - 1 + length) % length;
+      this._setActivedItem(this.items[index]);
     },
 
     /**
-     * Focuses the next item (relative to the currently focused item) in the
+     * Focuses the next item (relative to the currently actived item) in the
      * menu.
      */
-    _focusNext: function() {
-      var index = (Number(this.indexOf(this.focusedItem)) + 1) % this.items.length;
-      this._setFocusedItem(this.items[index]);
+    _activateNext: function() {
+//      console.log('iron-input-select-menu-behavior._activateNext() activedItem:',this.activedItem);
+      var index = (Number(this.indexOf(this.activedItem)) + 1) % this.items.length;
+      this._setActivedItem(this.items[index]);
     },
 
     /**
@@ -172,6 +183,7 @@ WARNING! In development. Not ready.
      * selected state, otherwise false.
      */
     _applySelection: function(item, isSelected) {
+      console.trace('iron-input-select-menu-behavior._applySelection() isSelected='+(isSelected?'true':'false')+'; item:',item);
       if (isSelected) {
         item.setAttribute('aria-selected', 'true');
       } else {
@@ -181,19 +193,62 @@ WARNING! In development. Not ready.
       Polymer.IronSelectableBehavior._applySelection.apply(this, arguments);
     },
 
+    setActiveSelected: function() {
+//      this._applySelection(this.activedItem, true);
+//      this.select();
+      this.activedItem.dispatchEvent(new CustomEvent('tap',{bubbles:true,cancelable:true,detail:null}));
+    },
+
     /**
-     * Discretely updates tabindex values among menu items as the focused item
+     * Discretely updates tabindex values among menu items as the actived item
      * changes.
      *
-     * @param {Element} focusedItem The element that is currently focused.
-     * @param {?Element} old The last element that was considered focused, if
+     * @param {Element} activedItem The element that is currently actived.
+     * @param {?Element} old The last element that was considered actived, if
      * applicable.
      */
-    _focusedItemChanged: function(focusedItem, old) {
-      old && old.setAttribute('tabindex', '-1');
-      if (focusedItem) {
-        focusedItem.setAttribute('tabindex', '0');
-        focusedItem.focus();
+    _activedItemChanged: function(activedItem, old) {
+//      console.log('iron-input-select-menu-behavior._activedItemChanged() activedItem:',activedItem);
+      if (activedItem) {
+/*
+//        console.log('iron-input-select-menu-behavior._activedItemChanged() activedItem.parentNode:',activedItem.parentNode);
+//        console.log('iron-input-select-menu-behavior._activedItemChanged() activedItem.parentNode.parentNode:',activedItem.parentNode.parentNode);
+        console.log('iron-input-select-menu-behavior._activedItemChanged() activedItem.parentNode:',activedItem.parentNode);
+        console.log('iron-input-select-menu-behavior._activedItemChanged() activedItem.parentNode.offsetHeight:',activedItem.parentNode.offsetHeight);
+        console.log('iron-input-select-menu-behavior._activedItemChanged() activedItem.parentNode.parentNode:',activedItem.parentNode.parentNode);
+        console.log('iron-input-select-menu-behavior._activedItemChanged() activedItem.parentNode.parentNode.offsetHeight:',activedItem.parentNode.parentNode.offsetHeight);
+        console.log('iron-input-select-menu-behavior._activedItemChanged() activedItem.parentNode.parentNode.parentNode:',activedItem.parentNode.parentNode.parentNode);
+        console.log('iron-input-select-menu-behavior._activedItemChanged() activedItem.parentNode.parentNode.parentNode.offsetHeight:',activedItem.parentNode.parentNode.parentNode.offsetHeight);
+        console.log('iron-input-select-menu-behavior._activedItemChanged() activedItem.parentNode.parentNode.parentNode.clientHeight:',activedItem.parentNode.parentNode.parentNode.clientHeight);
+//        console.log('iron-input-select-menu-behavior._activedItemChanged() activedItem.parentNode.parentNode.parentNode.scrollTop:',activedItem.parentNode.parentNode.parentNode.scrollTop);
+//        console.log('iron-input-select-menu-behavior._activedItemChanged() this:',this);
+//        console.log('iron-input-select-menu-behavior._activedItemChanged() this.parentNode:',this.parentNode);
+        console.log('iron-input-select-menu-behavior._activedItemChanged() this.parentNode.scrollHeight:',this.parentNode.scrollHeight);
+        console.log('iron-input-select-menu-behavior._activedItemChanged() this.parentNode.scrollTop:',this.parentNode.scrollTop);
+        console.log('iron-input-select-menu-behavior._activedItemChanged() this.parentNode.clientHeight:',this.parentNode.clientHeight);
+        console.log('iron-input-select-menu-behavior._activedItemChanged() this.parentNode.offsetHeight:',this.parentNode.offsetHeight);
+        console.log('iron-input-select-menu-behavior._activedItemChanged() this.parentNode.offsetTop:',this.parentNode.offsetTop);
+        console.log('iron-input-select-menu-behavior._activedItemChanged() this.parentNode.overflow:',this.parentNode.overflow);
+        console.log('iron-input-select-menu-behavior._activedItemChanged() this.scrollHeight:',this.scrollHeight);
+        console.log('iron-input-select-menu-behavior._activedItemChanged() this.scrollTop:',this.scrollTop);
+        console.log('iron-input-select-menu-behavior._activedItemChanged() this.clientHeight:',this.clientHeight);
+        console.log('iron-input-select-menu-behavior._activedItemChanged() this.offsetHeight:',this.offsetHeight);
+        console.log('iron-input-select-menu-behavior._activedItemChanged() this.offsetTop:',this.offsetTop);
+        console.log('iron-input-select-menu-behavior._activedItemChanged() this.overflow:',this.overflow);
+        console.log('iron-input-select-menu-behavior._activedItemChanged() activedItem.offsetHeight:',activedItem.offsetHeight);
+        console.log('iron-input-select-menu-behavior._activedItemChanged() activedItem.offsetTop:',activedItem.offsetTop);
+        console.log('iron-input-select-menu-behavior._activedItemChanged() activedItem.overflow:',activedItem.overflow);
+*/
+        this.parentNode.scrollTop = activedItem.offsetTop + (activedItem.offsetHeight / 2) - (this.parentNode.offsetHeight / 2);
+//        console.log('iron-input-select-menu-behavior._activedItemChanged() ... scrollTop:',this.parentNode.scrollTop);
+      }
+//      old && old.setAttribute('tabindex', '-1');
+//      old && old.setAttribute('actived', 'false');
+      old && old.removeAttribute('actived');
+      if (activedItem) {
+//        activedItem.setAttribute('tabindex', '0');
+        activedItem.setAttribute('actived',true);
+//        activedItem.focus();
       }
     },
 
@@ -208,7 +263,10 @@ WARNING! In development. Not ready.
       var mutations = event.detail;
       var mutation;
       var index;
+//      console.log('iron-input-select-menu-behavior._onIronItemsChanged() mutations:',mutations);
 
+      this._setActivedItem(this.items[0]);
+//      console.log('iron-input-select-menu-behavior._onIronItemsChanged() activedItem:',this.activedItem);
       for (index = 0; index < mutations.length; ++index) {
         mutation = mutations[index];
 
@@ -217,6 +275,9 @@ WARNING! In development. Not ready.
           break;
         }
       }
+//      console.log('iron-input-select-menu-behavior._onIronItemsChanged() activedItem:',this.activedItem);
+//      console.log('iron-input-select-menu-behavior._onIronItemsChanged() _setActivedItem 0!');
+//      console.log('iron-input-select-menu-behavior._onIronItemsChanged() activedItem:',this.activedItem);
     },
 
     /**
@@ -225,17 +286,19 @@ WARNING! In development. Not ready.
      * @param {CustomEvent} event A key combination event.
      */
     _onShiftTabDown: function(event) {
+      console.log('iron-input-select-menu-behavior._onShiftTabDown()');
       var oldTabIndex;
 
-      Polymer.IronMenuBehaviorImpl._shiftTabPressed = true;
+      Polymer.IronInputSelectMenuBehaviorImpl._shiftTabPressed = true;
 
-      oldTabIndex = this.getAttribute('tabindex');
+      oldTabIndex = this.getAttribute('actived');
 
-      this.setAttribute('tabindex', '-1');
+      this.removeAttribute('actived');
 
       this.async(function() {
-        this.setAttribute('tabindex', oldTabIndex);
-        Polymer.IronMenuBehaviorImpl._shiftTabPressed = false;
+        if (oldTabIndex) this.setAttribute('actived',true);
+        this.removeAttribute('actived');
+        Polymer.IronInputSelectMenuBehaviorImpl._shiftTabPressed = false;
       // NOTE(cdata): polymer/polymer#1305
       }, 1);
     },
@@ -246,21 +309,24 @@ WARNING! In development. Not ready.
      * @param {FocusEvent} event A focus event.
      */
     _onFocus: function(event) {
-      if (Polymer.IronMenuBehaviorImpl._shiftTabPressed) {
+      console.log('iron-input-select-menu-behavior._onFocus()');
+      if (Polymer.IronInputSelectMenuBehaviorImpl._shiftTabPressed) {
         return;
       }
       // do not focus the menu itself
-      this.blur();
+//      this.blur();
       // clear the cached focus item
-      this._setFocusedItem(null);
+      this._setActivedItem(null);
       this._defaultFocusAsync = this.async(function() {
         // focus the selected item when the menu receives focus, or the first item
         // if no item is selected
         var selectedItem = this.multi ? (this.selectedItems && this.selectedItems[0]) : this.selectedItem;
         if (selectedItem) {
-          this._setFocusedItem(selectedItem);
+          onsole.log('iron-input-select-menu-behavior._onFocus() ... selectedItem:',selectedItem);
+          this._setActivedItem(selectedItem);
         } else {
-          this._setFocusedItem(this.items[0]);
+          console.log('iron-input-select-menu-behavior._onFocus() ... _setActivedItem 0');
+          this._setActivedItem(this.items[0]);
         }
       // async 100ms to wait for `select` to get called from `_itemActivate`
       }, 100);
@@ -272,8 +338,9 @@ WARNING! In development. Not ready.
      * @param {CustomEvent} event A key combination event.
      */
     _onUpKey: function(event) {
+//      console.log('iron-input-select-menu-behavior._onUpKey()');
       // up and down arrows moves the focus
-      this._focusPrevious();
+      this._activatePrevious();
     },
 
     /**
@@ -282,7 +349,8 @@ WARNING! In development. Not ready.
      * @param {CustomEvent} event A key combination event.
      */
     _onDownKey: function(event) {
-      this._focusNext();
+//      console.log('iron-input-select-menu-behavior._onDownKey()');
+      this._activateNext();
     },
 
     /**
@@ -291,8 +359,9 @@ WARNING! In development. Not ready.
      * @param {CustomEvent} event A key combination event.
      */
     _onEscKey: function(event) {
+      console.log('iron-input-select-menu-behavior._onEscKey()');
       // esc blurs the control
-      this.focusedItem.blur();
+      this.activedItem.blur();
     },
 
     /**
@@ -301,22 +370,24 @@ WARNING! In development. Not ready.
      * @param {KeyboardEvent} event A keyboard event.
      */
     _onKeydown: function(event) {
+      console.log('iron-input-select-menu-behavior._onKeydown()');
       if (this.keyboardEventMatchesKeys(event, 'up down esc')) {
+        console.log('iron-input-select-menu-behavior._onKeydown() keyboardEventMatchesKeys up down esc');
         return;
       }
 
       // all other keys focus the menu item starting with that character
-      this._focusWithKeyboardEvent(event);
+      this._activateWithKeyboardEvent(event);
     }
   };
 
-  Polymer.IronMenuBehaviorImpl._shiftTabPressed = false;
+  Polymer.IronInputSelectMenuBehaviorImpl._shiftTabPressed = false;
 
-  /** @polymerBehavior Polymer.IronMenuBehavior */
-  Polymer.IronMenuBehavior = [
+  /** @polymerBehavior Polymer.IronInputSelectMenuBehavior */
+  Polymer.IronInputSelectMenuBehavior = [
     Polymer.IronMultiSelectableBehavior,
     Polymer.IronA11yKeysBehavior,
-    Polymer.IronMenuBehaviorImpl
+    Polymer.IronInputSelectMenuBehaviorImpl
   ];
 
 </script>
