@@ -53,6 +53,14 @@ WARNING! In development. Not ready.
        */
       attrForItemTitle: {
         type: String
+      },
+
+      /**
+       * rancid
+       */
+      debug: {
+        type: Boolean,
+        value: false
       }
     },
 
@@ -89,7 +97,7 @@ WARNING! In development. Not ready.
      * @param {string} value the value to select.
      */
     select: function(value) {
-      console.trace('iron-input-select-menu-behavior.select() value:',value);
+      if (this.debug) console.trace('iron-input-select-menu-behavior.select() value:',value);
       if (this._defaultFocusAsync) {
         this.cancelAsync(this._defaultFocusAsync);
         this._defaultFocusAsync = null;
@@ -127,7 +135,7 @@ WARNING! In development. Not ready.
      * @param {boolean} multi True if the menu should be multi-selectable.
      */
     _updateMultiselectable: function(multi) {
-      console.log('iron-input-select-menu-behavior._updateMultiselectable()');
+      if (this.debug) console.log('iron-input-select-menu-behavior._updateMultiselectable()');
       if (multi) {
         this.setAttribute('aria-multiselectable', 'true');
       } else {
@@ -142,7 +150,7 @@ WARNING! In development. Not ready.
      * @param {KeyboardEvent} event A KeyboardEvent.
      */
     _activateWithKeyboardEvent: function(event) {
-      console.log('iron-input-select-menu-behavior._activateWithKeyboardEvent()');
+      if (this.debug) console.log('iron-input-select-menu-behavior._activateWithKeyboardEvent()');
       for (var i = 0, item; item = this.items[i]; i++) {
         var attr = this.attrForItemTitle || 'textContent';
         var title = item[attr] || item.getAttribute(attr);
@@ -183,7 +191,7 @@ WARNING! In development. Not ready.
      * selected state, otherwise false.
      */
     _applySelection: function(item, isSelected) {
-      console.trace('iron-input-select-menu-behavior._applySelection() isSelected='+(isSelected?'true':'false')+'; item:',item);
+      if (this.debug) console.trace('iron-input-select-menu-behavior._applySelection() isSelected='+(isSelected?'true':'false')+'; item:',item);
       if (isSelected) {
         item.setAttribute('aria-selected', 'true');
       } else {
@@ -286,7 +294,7 @@ WARNING! In development. Not ready.
      * @param {CustomEvent} event A key combination event.
      */
     _onShiftTabDown: function(event) {
-      console.log('iron-input-select-menu-behavior._onShiftTabDown()');
+      if (this.debug) console.log('iron-input-select-menu-behavior._onShiftTabDown()');
       var oldTabIndex;
 
       Polymer.IronInputSelectMenuBehaviorImpl._shiftTabPressed = true;
@@ -309,7 +317,7 @@ WARNING! In development. Not ready.
      * @param {FocusEvent} event A focus event.
      */
     _onFocus: function(event) {
-      console.log('iron-input-select-menu-behavior._onFocus()');
+      if (this.debug) console.log('iron-input-select-menu-behavior._onFocus()');
       if (Polymer.IronInputSelectMenuBehaviorImpl._shiftTabPressed) {
         return;
       }
@@ -322,10 +330,10 @@ WARNING! In development. Not ready.
         // if no item is selected
         var selectedItem = this.multi ? (this.selectedItems && this.selectedItems[0]) : this.selectedItem;
         if (selectedItem) {
-          onsole.log('iron-input-select-menu-behavior._onFocus() ... selectedItem:',selectedItem);
+          if (this.debug) console.log('iron-input-select-menu-behavior._onFocus() ... selectedItem:',selectedItem);
           this._setActivedItem(selectedItem);
         } else {
-          console.log('iron-input-select-menu-behavior._onFocus() ... _setActivedItem 0');
+          if (this.debug) console.log('iron-input-select-menu-behavior._onFocus() ... _setActivedItem 0');
           this._setActivedItem(this.items[0]);
         }
       // async 100ms to wait for `select` to get called from `_itemActivate`
@@ -359,7 +367,7 @@ WARNING! In development. Not ready.
      * @param {CustomEvent} event A key combination event.
      */
     _onEscKey: function(event) {
-      console.log('iron-input-select-menu-behavior._onEscKey()');
+      if (this.debug) console.log('iron-input-select-menu-behavior._onEscKey()');
       // esc blurs the control
       this.activedItem.blur();
     },
@@ -370,9 +378,9 @@ WARNING! In development. Not ready.
      * @param {KeyboardEvent} event A keyboard event.
      */
     _onKeydown: function(event) {
-      console.log('iron-input-select-menu-behavior._onKeydown()');
+      if (this.debug) console.log('iron-input-select-menu-behavior._onKeydown()');
       if (this.keyboardEventMatchesKeys(event, 'up down esc')) {
-        console.log('iron-input-select-menu-behavior._onKeydown() keyboardEventMatchesKeys up down esc');
+        if (this.debug) console.log('iron-input-select-menu-behavior._onKeydown() keyboardEventMatchesKeys up down esc');
         return;
       }
 
